@@ -1,0 +1,10 @@
+.venv/
+.env
+# ignore .env and .venv .json files, which may contain sensitive information
+*.json
+.json
+# ignore documents folder, which may contain sensitive information
+documents/*
+__pycache__/
+__pycache__/*
+*.pyc

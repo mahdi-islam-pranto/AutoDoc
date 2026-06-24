@@ -1,0 +1,41 @@
+# Core LangChain and LangGraph packages
+langchain
+langchain-core
+langchain-openai
+# google
+langchain-google-genai
+langgraph
+
+# llm observer
+mlflow
+
+# Database and Async Support
+psycopg2-binary
+psycopg-pool
+asyncpg
+langgraph-checkpoint-postgres
+
+# Web Framework and Server
+fastapi
+uvicorn
+
+# Data Validation
+pydantic
+
+# Environment Variables
+python-dotenv
+
+# Utilities
+typing-extensions
+
+# Optional: For search and embeddings (if needed)
+faiss-cpu
+sentence-transformers
+
+# rapidfuzz
+rapidfuzz
+langchain_community
+langchain_huggingface
+
+# token manage
+langfuse
