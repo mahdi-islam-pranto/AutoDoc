@@ -8,18 +8,21 @@ from schemas import ChatRequest
 from utilities.helper import generate_graph_config
 from dotenv import load_dotenv
 import traceback
-# import mlflow
+import os
+import mlflow
+from mlflow.entities import SpanType
 
 # Load environment variables from .env file
 load_dotenv()
 
 
-# # setup mlflow (will be used later)
-# mlflow.set_tracking_uri("http://localhost:5000")
-# mlflow.set_experiment("Medical Booking Agent - LLM Observability")
+# setup mlflow: traces are stored in the local mlflow.db (SQLite) by default,
+# override with MLFLOW_TRACKING_URI in .env (e.g. http://localhost:5000)
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
+mlflow.set_experiment("Medical Booking Agent - LLM Observability")
 
-# # Enabling tracing for LangGraph (LangChain)
-# mlflow.langchain.autolog()
+# Enabling tracing for LangGraph (LangChain): captures graph nodes, tools and LLM calls
+mlflow.langchain.autolog()
 
 # Initialize Langfuse client
 #need to remove
@@ -45,6 +48,25 @@ templates = Jinja2Templates(directory="templates")
 async def index(request: Request):
     """Serves the AutoDoc chat frontend."""
     return templates.TemplateResponse(request, "index.html")
+
+# mlflow.trace decorator to trace the entire conversation turn through the graph
+@mlflow.trace(name="handle_message", span_type=SpanType.AGENT)
+async def run_agent(graph, request: ChatRequest, config: dict):
+    """Runs one conversation turn through the graph inside a single MLflow trace."""
+    # Tag the trace so all turns of a conversation can be grouped in the MLflow UI
+    mlflow.update_current_trace(
+        metadata={
+            "mlflow.trace.user": request.user_id,
+            "mlflow.trace.session": config["configurable"]["thread_id"],
+        },
+        tags={"channel": request.channel},
+    )
+    return await graph.ainvoke(
+        {
+            "messages": [HumanMessage(content=request.message)],
+        },
+        config=config
+    )
 
 
 # This endpoint receives a user message from the frontend (WhatsApp/Facebook).
@@ -84,12 +106,7 @@ async def handle_message(request: ChatRequest):
             
     try:
         # Invoke the graph with the user message and config. The graph will process the message through the graph nodes and return the updated state.
-        result = await _graph.ainvoke(
-            {
-                "messages": [HumanMessage(content=request.message)],
-            },
-            config=config
-        )
+        result = await run_agent(_graph, request, config)
         
     except Exception as e:
         error_detail = {
