@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS doctors (
     updated_at              TIMESTAMP
 );
 
+
+
 -- create appointments table
 
 CREATE TABLE IF NOT EXISTS appointments (

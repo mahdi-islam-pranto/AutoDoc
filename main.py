@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from langchain_core.messages import HumanMessage, AIMessage
 from config.fast_api import lifespan
 from schemas import ChatRequest
@@ -32,6 +35,16 @@ app = FastAPI(
     #   lifespan=lifespan  # we will define this in a moment
     lifespan=lifespan
 )
+
+# Serve the web frontend (static assets + chat page)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    """Serves the AutoDoc chat frontend."""
+    return templates.TemplateResponse(request, "index.html")
 
 
 # This endpoint receives a user message from the frontend (WhatsApp/Facebook).
